@@ -76,58 +76,58 @@ def process_excel(input_bytes, stats_json):
         style_cell(ws.cell(row=4, column=start_col + 1 + i), header)
 
     # ---------------- 4. 按マスタ番号匹配写入数据 & 隐藏行 ----------------
-stats_rows = stats_data[1:-2]
-total_rows = stats_data[-2:]
+    stats_rows = stats_data[1:-2]
+    total_rows = stats_data[-2:]
 
-# 记录哪些合并区域已经处理过（避免重复）
-processed_merged_groups = set()
+    # 记录哪些合并区域已经处理过（避免重复）
+    processed_merged_groups = set()
 
-for row_idx in range(5, ws.max_row + 1):
+    for row_idx in range(5, ws.max_row + 1):
 
-    # 获取该行所属的整个合并区域
-    merged_rows = tuple(sorted(get_merged_rows(ws, row_idx))) or (row_idx,)
+        # 获取该行所属的整个合并区域
+        merged_rows = tuple(sorted(get_merged_rows(ws, row_idx))) or (row_idx,)
 
-    # 避免重复处理：只在合并区域的第一行处理一次
-    group_key = merged_rows
-    if group_key in processed_merged_groups:
-        continue
-    processed_merged_groups.add(group_key)
+        # 避免重复处理：只在合并区域的第一行处理一次
+        group_key = merged_rows
+        if group_key in processed_merged_groups:
+            continue
+        processed_merged_groups.add(group_key)
 
-    # 判断该组是否匹配
-    master_no = ws.cell(row=merged_rows[0], column=7).value  # 用合并块第一行的 master_no
-    match = next((r for r in stats_rows if r[0] == master_no), None)
+        # 判断该组是否匹配
+        master_no = ws.cell(row=merged_rows[0], column=7).value  # 用合并块第一行的 master_no
+        match = next((r for r in stats_rows if r[0] == master_no), None)
 
-    if match:
-        # 填写每一行
-        for r in merged_rows:
-            val2 = float(match[1]) if match[1] not in [None, ""] else 0
-            val3 = float(match[2]) if match[2] not in [None, ""] else 0
-            total_val = val2 + val3
-            style_cell(ws.cell(row=r, column=start_col), total_val)
-
-            for i, val in enumerate(match[1:]):
-                style_cell(ws.cell(row=r, column=start_col + 1 + i), val)
-
-            ws.row_dimensions[r].hidden = False  # 整块显示
-
-    else:
-        # 判断整个合并区域是否都是空的
-        group_is_empty = True
-        for r in merged_rows:
-            row_cells = ws[r]
-            if not all(cell.value in [None, ""] for cell in row_cells):
-                group_is_empty = False
-                break
-
-        # 空的 → 显示整块
-        if group_is_empty:
+        if match:
+            # 填写每一行
             for r in merged_rows:
-                ws.row_dimensions[r].hidden = False
+                val2 = float(match[1]) if match[1] not in [None, ""] else 0
+                val3 = float(match[2]) if match[2] not in [None, ""] else 0
+                total_val = val2 + val3
+                style_cell(ws.cell(row=r, column=start_col), total_val)
 
-        # 非空 → 隐藏整块
+                for i, val in enumerate(match[1:]):
+                    style_cell(ws.cell(row=r, column=start_col + 1 + i), val)
+
+                ws.row_dimensions[r].hidden = False  # 整块显示
+
         else:
+            # 判断整个合并区域是否都是空的
+            group_is_empty = True
             for r in merged_rows:
-                ws.row_dimensions[r].hidden = True
+                row_cells = ws[r]
+                if not all(cell.value in [None, ""] for cell in row_cells):
+                    group_is_empty = False
+                    break
+
+            # 空的 → 显示整块
+            if group_is_empty:
+                for r in merged_rows:
+                    ws.row_dimensions[r].hidden = False
+
+            # 非空 → 隐藏整块
+            else:
+                for r in merged_rows:
+                    ws.row_dimensions[r].hidden = True
 
     # ---------------- 5. 写入总计行 ----------------
     def is_row_empty(row):
