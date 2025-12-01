@@ -4,6 +4,17 @@ import tempfile
 import os
 from openpyxl.styles import PatternFill, Alignment, Font, Border, Side
 
+# 检查某行是否在某个合并区域内，并返回该区域所有行
+def get_merged_rows(ws, row_idx):
+    merged_rows = set()
+    for merged_range in ws.merged_cells.ranges:
+        min_row = merged_range.min_row
+        max_row = merged_range.max_row
+        if min_row <= row_idx <= max_row:
+            for r in range(min_row, max_row + 1):
+                merged_rows.add(r)
+    return merged_rows
+
 def process_excel(input_bytes, stats_json):
     """
     input_bytes: 上传的 Excel 文件 bytes
@@ -82,10 +93,19 @@ def process_excel(input_bytes, stats_json):
             ws.row_dimensions[row_idx].hidden = False
         else:
             row_cells = ws[row_idx]
-            if all(cell.value in [None, ""] for cell in row_cells):
-                ws.row_dimensions[row_idx].hidden = False
+            is_empty = all(cell.value in [None, ""] for cell in row_cells)
+
+            # 找到该行属于哪些合并区域
+            merged_rows = get_merged_rows(ws, row_idx)
+
+            if is_empty:
+                # 显示所有受影响行
+                for r in (merged_rows or {row_idx}):
+                    ws.row_dimensions[r].hidden = False
             else:
-                ws.row_dimensions[row_idx].hidden = True
+                # 隐藏所有受影响行
+                for r in (merged_rows or {row_idx}):
+                    ws.row_dimensions[r].hidden = True
 
     # ---------------- 5. 写入总计行 ----------------
     def is_row_empty(row):
