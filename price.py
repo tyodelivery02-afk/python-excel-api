@@ -31,6 +31,9 @@ def calc_total(
     req: CalcRequest,
     x_api_key: str = Header(None)
 ):
+    print("RAW HEADERS:", dict(req.headers))
+    print("REQ BODY:", req)
+    
     if x_api_key != os.getenv("API_TOKEN"):
         raise HTTPException(status_code=403, detail="Forbidden")
 
