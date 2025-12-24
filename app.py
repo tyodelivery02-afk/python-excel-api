@@ -1,8 +1,11 @@
 from fastapi import FastAPI, UploadFile, Form
 from fastapi.responses import Response
 from process_excel import process_excel
+from price import router as price_router
 
 app = FastAPI()
+
+app.include_router(price_router)
 
 @app.post("/process")
 async def process(file: UploadFile, statsData: str = Form(...)):
