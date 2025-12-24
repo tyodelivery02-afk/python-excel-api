@@ -1,5 +1,5 @@
 # price.py
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel
 from typing import List
 import os
@@ -27,13 +27,14 @@ class CalcRequest(BaseModel):
 
 
 @router.post("/calc")
-def calc_total(
+async def calc_total(
     req: CalcRequest,
+    request: Request,
     x_api_key: str = Header(None)
 ):
-    print("RAW HEADERS:", dict(req.headers))
-    print("REQ BODY:", req)
-    
+    print("HEADERS:", dict(request.headers))
+    print("PARSED BODY:", req)
+
     if x_api_key != os.getenv("API_TOKEN"):
         raise HTTPException(status_code=403, detail="Forbidden")
 
