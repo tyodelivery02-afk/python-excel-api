@@ -16,7 +16,7 @@ def get_unit_price(weight: float) -> float:
     for rule in PRICE_TABLE:
         if rule["min"] <= weight <= rule["max"]:
             return rule["price"]
-    return 0
+    return 0.0
 
 
 class Item(BaseModel):
@@ -36,7 +36,7 @@ def calc_total(
 
     total = 0.0
     for item in req.items:
-        unit = get_unit_price(item.weight)
-        total += unit * item.weight
+        price = get_unit_price(item.weight)
+        total += price
 
     return {"total": total}
